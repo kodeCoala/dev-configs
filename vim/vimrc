@@ -1,0 +1,305 @@
+" An example for a vimrc file.
+"
+" Maintainer:	Bram Moolenaar <Bram@vim.org>
+" Last change:	2008 Jul 02
+"
+" To use it, copy it to
+"     for Unix and OS/2:  ~/.vimrc
+"	      for Amiga:  s:.vimrc
+"  for MS-DOS and Win32:  $VIM\_vimrc
+"	    for OpenVMS:  sys$login:.vimrc
+
+" When started as "evim", evim.vim will already have done these settings.
+if v:progname =~? "evim"
+  finish
+endif
+
+" Use Vim settings, rather then Vi settings (much better!).
+" This must be first, because it changes other options as a side effect.
+set nocompatible
+filetype off
+
+set rtp+=~/.vim/bundle/vundle
+call vundle#rc()
+
+" let Vundle manage Vundle
+Bundle 'gmarik/vundle'
+
+" My Bundless
+Bundle 'Valloric/YouCompleteMe'
+Bundle 'scrooloose/nerdtree'
+
+filetype plugin indent on
+
+set pastetoggle=<F2>
+
+" allow backspacing over everything in insert mode
+set backspace=indent,eol,start
+
+if has("vms")
+  set nobackup		" do not keep a backup file, use versions instead
+else
+  set backup		" keep a backup file
+endif
+set history=50		" keep 50 lines of command line history
+set ruler		" show the cursor position all the time
+set showcmd		" display incomplete commands
+set incsearch		" do incremental searching
+
+" For Win32 GUI: remove 't' flag from 'guioptions': no tearoff menu entries
+" let &guioptions = substitute(&guioptions, "t", "", "g")
+
+" Don't use Ex mode, use Q for formatting
+map Q gq
+
+" CTRL-U in insert mode deletes a lot.  Use CTRL-G u to first break undo,
+" so that you can undo CTRL-U after inserting a line break.
+inoremap <C-U> <C-G>u<C-U>
+
+" In many terminal emulators the mouse works just fine, thus enable it.
+if has('mouse')
+  set mouse=a
+endif
+
+" Switch syntax highlighting on, when the terminal has colors
+" Also switch on highlighting the last used search pattern.
+if &t_Co > 2 || has("gui_running")
+  syntax on
+  set hlsearch
+endif
+
+" Only do this part when compiled with support for autocommands.
+if has("autocmd")
+
+  " Enable file type detection.
+  " Use the default filetype settings, so that mail gets 'tw' set to 72,
+  " 'cindent' is on in C files, etc.
+  " Also load indent files, to automatically do language-dependent indenting.
+  filetype plugin indent on
+
+  " Put these in an autocmd group, so that we can delete them easily.
+  augroup vimrcEx
+  au!
+
+  " For all text files set 'textwidth' to 78 characters.
+  autocmd FileType text setlocal textwidth=78
+
+  " When editing a file, always jump to the last known cursor position.
+  " Don't do it when the position is invalid or when inside an event handler
+  " (happens when dropping a file on gvim).
+  " Also don't do it when the mark is in the first line, that is the default
+  " position when opening a file.
+  autocmd BufReadPost *
+    \ if line("'\"") > 1 && line("'\"") <= line("$") |
+    \   exe "normal! g`\"" |
+    \ endif
+
+  augroup END
+
+else
+
+  set autoindent		" always set autoindenting on
+
+endif " has("autocmd")
+
+" Convenient command to see the difference between the current buffer and the
+" file it was loaded from, thus the changes you made.
+" Only define it when not defined already.
+if !exists(":DiffOrig")
+  command DiffOrig vert new | set bt=nofile | r # | 0d_ | diffthis
+		  \ | wincmd p | diffthis
+endif
+
+" Tab settings for code
+" 4-space tabs
+set tabstop=4
+" use < and > from visual mode to block indent code
+set shiftwidth=4
+set expandtab
+set softtabstop=4
+
+if has("autocmd")
+  " Smart indenting for python files
+  " This indents based on keyword
+  "autocmd BufRead *.py set smartindent cinwords=if,elif,else,for,while,try,except,finally,def,class,with
+  " This inserts a tab when you type a colon ':' followed by a return
+  " im :<CR> :<CR><TAB>
+
+  " Indent comments
+  autocmd FileType python inoremap # X<c-h>#
+
+  " Remove trailing whitespace when saving
+  autocmd BufWritePre *.py,*.c,*.h,*.cpp,*.hpp,*.cc,*.cs :%s/\s\+$//e
+  "autocmd BufWritePre *.cpp :%s/\s\+$//e
+
+  " Highlight characters past the 80th column
+  ":au BufWinEnter *.py let w:m1=matchadd('Search','\%<80v.\%>71v',-1)
+  ":au BufWinEnter *.py let w:m2=matchadd('ErrorMsg','\%80v.*',-1)
+
+endif " has("autocmd")
+
+set nowrap
+"set textwidth=80
+
+" Display line numbers
+set nu
+
+" Use bash as vim shell
+set shell=/bin/bash
+" Make bash read bashrc so aliases work
+set shcf=-lc
+
+" With both ignorecase and smartcase turned on, a search is case-insensitive if
+" you enter the search string in ALL lower case. For example, searching for apple
+" will find Apple and APPLE.
+" However, if your search string has one or more characters in upper case, it will
+" assume that you want a case-sensitive search. So, searching for Apple will only
+" give you Apple but not apple or APPLE.
+set ignorecase
+set smartcase
+
+" Search highlighting was enabled on line 53.  I'm not a fan most of the time.
+set nohlsearch
+
+if has("clipboard")
+  " Yank everything (unnamed buffer) to clipboard
+  set clipboard=unnamed
+endif
+
+" gvim settings
+colo torte
+
+" Load Mercurial syntax highlighting
+au BufNewFile,BufRead *hg-editor* set filetype=hgcommit
+au BufNewFile,BufRead *.hgrc,*hgrc set filetype=cfg
+au BufNewFile,BufRead *.hgignore,*hgignore set filetype=hgignore
+au BufNewFile,BufRead *.json set filetype=javascript
+au BufNewFile,BufRead fetch.conf set filetype=javascript
+
+" Load protobuf highlighting
+au BufNewFile,BufRead *.proto set filetype=proto
+augroup golang
+    au!
+    au BufRead,BufNewFile *.go set filetype=go
+    au FileType go set noexpandtab
+    au FileType go set smartindent
+    au FileType go set equalprg=gofmt
+augroup END
+
+highlight clear Visual
+highlight Visual term=reverse cterm=reverse gui=reverse
+
+" Spell check options.  Use F12 to toggle
+map <F12> :set spell!<cr>
+"set spell spelllang=en_us
+" zg to add word to word list
+" zw to reverse
+" zug to remove word from word list
+" z= to get list of possibilities
+"set spellfile=~/.vim/spellfile
+highlight clear SpellBad
+highlight SpellBad term=standout ctermfg=Yellow term=underline cterm=underline
+highlight clear SpellCap
+highlight SpellCap term=underline cterm=underline
+highlight clear SpellRare
+highlight SpellRare term=underline cterm=underline
+highlight clear SpellLocal
+highlight SpellLocal term=underline cterm=underline
+
+" This will put all of vim's '*~' files in a single directory instead of
+" cluttering up other dirs
+set backupdir=~/.vim_backup//,/tmp//,C:/Users/jshaw/_vim_backup//
+set directory=~/.vim_backup//,/tmp//,C:/Users/jshaw/_vim_backup//
+
+" Some handy ctags macros
+com BuildTags :!ctags -R --c++-kinds=+pl --fields=+iaS --extra=+q<CR>
+map <C-h> <C-T>
+map <C-l> <C-]>
+
+" Setting exrc will instruct vim to look for a {.,_}vimrc or {.,_}exrc file in
+" the current directory.  This is useful for setting up project specific
+" values.
+set exrc
+
+set guioptions+=b
+
+" ex command for toggling hex mode - define mapping if desired
+command -bar Hexmode call ToggleHex()
+
+" helper function to toggle hex mode
+function ToggleHex()
+  " hex mode should be considered a read-only operation
+  " save values for modified and read-only for restoration later,
+  " and clear the read-only flag for now
+  let l:modified=&mod
+  let l:oldreadonly=&readonly
+  let &readonly=0
+  let l:oldmodifiable=&modifiable
+  let &modifiable=1
+  if !exists("b:editHex") || !b:editHex
+    " save old options
+    let b:oldft=&ft
+    let b:oldbin=&bin
+    " set new options
+    setlocal binary " make sure it overrides any textwidth, etc.
+    let &ft="xxd"
+    " set status
+    let b:editHex=1
+    " switch to hex editor
+    %!xxd
+  else
+    " restore old options
+    let &ft=b:oldft
+    if !b:oldbin
+      setlocal nobinary
+    endif
+    " set status
+    let b:editHex=0
+    " return to normal editing
+    %!xxd -r
+  endif
+  " restore values for modified and read only state
+  let &mod=l:modified
+  let &readonly=l:oldreadonly
+  let &modifiable=l:oldmodifiable
+endfunction
+
+
+" Prior to writing a file, check for the copyright statement
+" and update accordingly.  The script makes two passes.  The first
+" pass looks for a year to append with a ',' then the second pass
+" it will add a dash (consecutive years of editing).
+autocmd BufWritePre *
+    \ if &modified |
+    \   exe '%s:'.
+    \       '\cCOPYRIGHT\s*\%((c)\|©\|©\)\?\s*'.
+    \         '\%([0-9]\{4}\(-[0-9]\{4\}\)\?,\s*\)*\zs'.
+    \         '\('.
+    \           '\%('.strftime("%Y").'\)\@![0-9]\{4\}'.
+    \           '\%(-'.strftime("%Y").'\)\@!\%(-[0-9]\{4\}\)\?'.
+    \         '\&'.
+    \           '\%([0-9]\{4\}-\)\?'.
+    \           '\%('.(strftime("%Y")-1).'\)\@!'.
+    \           '\%([0-9]\)\{4\}'.
+    \         '\)'.
+    \         '\ze\%(\%([0-9]\{4\}\)\@!.\)*$:'.
+    \       '&, '.strftime("%Y").':e' |
+    \   exe '%s:'.
+    \       '\cCOPYRIGHT\s*\%((c)\|©\|©\)\?\s*'.
+    \         '\%([0-9]\{4}\%(-[0-9]\{4\}\)\?,\s*\)*\zs'.
+    \           '\%('.strftime("%Y").'\)\@!\([0-9]\{4\}\)'.
+    \           '\%(-'.strftime("%Y").'\)\@!\%(-[0-9]\{4\}\)\?'.
+    \         '\ze\%(\%([0-9]\{4\}\)\@!.\)*$:'.
+    \       '\1-'.strftime("%Y").':e' |
+    \ endif
+
+" Arrow keys force bad habits.  Keep out of insert mode and on the home row!
+inoremap <Left>  <NOP>
+inoremap <Right> <NOP>
+inoremap <Up>    <NOP>
+inoremap <Down>  <NOP>
+
+"call pathogen#runtime_append_all_bundles()
+"call pathogen#helptags()
+
+"let g:LargeFile = 500
